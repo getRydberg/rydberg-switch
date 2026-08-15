@@ -1,9 +1,9 @@
-import { resolve } from "node:path";
 import cookieParser from "cookie-parser";
 import express, { type Request, type Response } from "express";
 import { clearSession, createSession, isAuthenticated, requireAuth } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { SwitchController } from "./docker-controller.js";
+import { registerFrontendRoutes } from "./frontend.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const configPath = process.env.GAMES_CONFIG ?? "/app/games/games.json";
@@ -98,8 +98,7 @@ app.get("/api/games/:id/logs", requireAuth(accessKey), async (request, response)
   });
 });
 
-app.use(express.static(staticPath, { fallthrough: true, maxAge: "1h", index: false }));
-app.get("/*path", (_request, response) => response.sendFile(resolve(staticPath, "index.html")));
+registerFrontendRoutes(app, staticPath);
 
 app.use((error: unknown, _request: Request, response: Response, _next: unknown) => {
   console.error(error);
