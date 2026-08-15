@@ -1,0 +1,20 @@
+{
+  "name": "rydberg-switch",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "controller",
+    "web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @rydberg/switch-controller && npm run build --workspace @rydberg/switch-web",
+    "dev": "npm run dev --workspace @rydberg/switch-web",
+    "test": "npm run test --workspace @rydberg/switch-controller && npm run test --workspace @rydberg/switch-web",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
+

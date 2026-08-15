@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "settings": {
+    "budgetMemoryMb": 15360,
+    "maxConcurrent": 1,
+    "dockerNetwork": "rydberg-net",
+    "publicHost": "play.rydberg.app",
+    "autoStop": {
+      "enabled": true,
+      "idleMinutes": 20,
+      "neverJoinedMinutes": 60,
+      "startupGraceMinutes": 15,
+      "pollSeconds": 15
+    }
+  },
+  "games": [
+    {
+      "id": "minecraft",
+      "name": "Minecraft",
+      "edition": "Java Edition",
+      "description": "A private vanilla survival world with room for plugins or modpacks later.",
+      "image": "itzg/minecraft-server:latest",
+      "imageUrl": "https://github.com/itzg/docker-minecraft-server",
+      "color": "#9fc46b",
+      "memoryMb": 8192,
+      "cpus": 4,
+      "stopSeconds": 90,
+      "ports": [
+        { "container": 25565, "host": 25565, "protocol": "tcp", "label": "Game", "public": true }
+      ],
+      "volume": { "source": "rydberg-switch-minecraft", "target": "/data" },
+      "environment": {
+        "EULA": "${MINECRAFT_EULA}",
+        "TYPE": "VANILLA",
+        "VERSION": "LATEST",
+        "MEMORY": "6G",
+        "MAX_PLAYERS": "12",
+        "MOTD": "Rydberg game night",
+        "ONLINE_MODE": "TRUE",
+        "ENABLE_QUERY": "TRUE",
+        "VIEW_DISTANCE": "10",
+        "SIMULATION_DISTANCE": "8",
+        "USE_AIKAR_FLAGS": "TRUE",
+        "UID": "${PUID}",
+        "GID": "${PGID}",
+        "TZ": "${TZ}"
+      },
+      "requiredEnvironment": ["MINECRAFT_EULA"],
+      "query": { "type": "minecraftvanilla", "port": 25565 },
+      "startup": {
+        "timeoutSeconds": 600,
+        "markers": [
+          { "pattern": "Downloading|Installing", "progress": 72, "label": "Installing the Minecraft server…" },
+          { "pattern": "Preparing spawn area", "progress": 86, "label": "Generating the world…" },
+          { "pattern": "Done \\([0-9.]+s\\)!", "progress": 100, "label": "Online and ready to join" }
+        ]
+      }
+    },
+    {
+      "id": "palworld",
+      "name": "Palworld",
+      "edition": "Cross-platform",
+      "description": "A persistent co-op island for catching Pals, building bases, and causing trouble.",
+      "image": "thijsvanloef/palworld-server-docker:latest",
+      "imageUrl": "https://github.com/thijsvanloef/palworld-server-docker",
+      "color": "#6fc6c4",
+      "memoryMb": 15000,
+      "cpus": 6,
+      "stopSeconds": 120,
+      "warning": "Palworld officially recommends more than this 15 GB cap; watch for memory pressure on large worlds.",
+      "ports": [
+        { "container": 8211, "host": 8211, "protocol": "udp", "label": "Game", "public": true },
+        { "container": 27015, "host": 27015, "protocol": "udp", "label": "Query", "public": true },
+        { "container": 8212, "host": 8212, "protocol": "tcp", "label": "Private status API", "public": false }
+      ],
+      "volume": { "source": "rydberg-switch-palworld", "target": "/palworld" },
+      "environment": {
+        "PUID": "${PUID}",
+        "PGID": "${PGID}",
+        "PORT": "8211",
+        "QUERY_PORT": "27015",
+        "PLAYERS": "10",
+        "SERVER_NAME": "Rydberg Palworld",
+        "SERVER_DESCRIPTION": "Private Rydberg game night",
+        "SERVER_PASSWORD": "${PALWORLD_SERVER_PASSWORD}",
+        "ADMIN_PASSWORD": "${PALWORLD_ADMIN_PASSWORD}",
+        "REST_API_ENABLED": "true",
+        "REST_API_PORT": "8212",
+        "RCON_ENABLED": "true",
+        "UPDATE_ON_BOOT": "true",
+        "COMMUNITY": "false",
+        "CROSSPLAY_PLATFORMS": "(Steam,Xbox,PS5,Mac)",
+        "TZ": "${TZ}"
+      },
+      "requiredEnvironment": ["PALWORLD_SERVER_PASSWORD", "PALWORLD_ADMIN_PASSWORD"],
+      "query": { "type": "palworld", "port": 8212, "username": "admin", "password": "${PALWORLD_ADMIN_PASSWORD}", "rejectUnauthorized": false },
+      "startup": {
+        "timeoutSeconds": 900,
+        "markers": [
+          { "pattern": "Updating|Downloading", "progress": 72, "label": "Updating Palworld…" },
+          { "pattern": "Setting breakpad minidump AppID", "progress": 88, "label": "Loading the island…" }
+        ]
+      }
+    },
+    {
+      "id": "satisfactory",
+      "name": "Satisfactory",
+      "edition": "Dedicated Server",
+      "description": "A shared factory that stays safely on disk between production sessions.",
+      "image": "wolveix/satisfactory-server:latest",
+      "imageUrl": "https://github.com/wolveix/satisfactory-server",
+      "color": "#e2a653",
+      "memoryMb": 12288,
+      "cpus": 6,
+      "stopSeconds": 120,
+      "ports": [
+        { "container": 7777, "host": 7777, "protocol": "tcp", "label": "Game", "public": true },
+        { "container": 7777, "host": 7777, "protocol": "udp", "label": "Game", "public": true },
+        { "container": 8888, "host": 8888, "protocol": "tcp", "label": "Reliable messaging", "public": true }
+      ],
+      "volume": { "source": "rydberg-switch-satisfactory", "target": "/config" },
+      "environment": {
+        "PUID": "${PUID}",
+        "PGID": "${PGID}",
+        "MAXPLAYERS": "8",
+        "STEAMBETA": "false",
+        "AUTOSAVENUM": "5",
+        "SERVERGAMEPORT": "7777",
+        "SERVERMESSAGINGPORT": "8888",
+        "TZ": "${TZ}"
+      },
+      "query": { "type": "satisfactory", "port": 7777, "rejectUnauthorized": false },
+      "startup": {
+        "timeoutSeconds": 900,
+        "markers": [
+          { "pattern": "Downloading|Update state", "progress": 72, "label": "Updating Satisfactory…" },
+          { "pattern": "LogLoad.*Took", "progress": 90, "label": "Loading the factory…" },
+          { "pattern": "Server is now ticking", "progress": 100, "label": "Online and ready to join" }
+        ]
+      }
+    },
+    {
+      "id": "ark",
+      "name": "ARK",
+      "edition": "Survival Evolved",
+      "description": "A single-map private island with graceful saves, backups, and optional Workshop mods.",
+      "image": "ghcr.io/hermsi1337/ark-server:latest",
+      "imageUrl": "https://github.com/Hermsi1337/docker-ark-server",
+      "color": "#c87868",
+      "memoryMb": 12288,
+      "cpus": 6,
+      "stopSeconds": 300,
+      "ports": [
+        { "container": 7777, "host": 7777, "protocol": "udp", "label": "Game", "public": true },
+        { "container": 7778, "host": 7778, "protocol": "udp", "label": "Raw socket", "public": true },
+        { "container": 27015, "host": 27015, "protocol": "udp", "label": "Server list", "public": true },
+        { "container": 27020, "host": 27020, "protocol": "tcp", "label": "Private RCON", "public": false }
+      ],
+      "volume": { "source": "rydberg-switch-ark", "target": "/app" },
+      "environment": {
+        "PUID": "${PUID}",
+        "PGID": "${PGID}",
+        "SESSION_NAME": "Rydberg ARK",
+        "SERVER_MAP": "TheIsland",
+        "SERVER_PASSWORD": "${ARK_SERVER_PASSWORD}",
+        "ADMIN_PASSWORD": "${ARK_ADMIN_PASSWORD}",
+        "MAX_PLAYERS": "10",
+        "UPDATE_ON_START": "true",
+        "PRE_UPDATE_BACKUP": "true",
+        "BACKUP_ON_STOP": "true",
+        "WARN_ON_STOP": "true",
+        "ENABLE_CROSSPLAY": "true",
+        "TZ": "${TZ}"
+      },
+      "requiredEnvironment": ["ARK_SERVER_PASSWORD", "ARK_ADMIN_PASSWORD"],
+      "query": { "type": "ase", "port": 27015 },
+      "startup": {
+        "timeoutSeconds": 1800,
+        "markers": [
+          { "pattern": "Installing|Updating", "progress": 70, "label": "Installing ARK (the first launch is large)…" },
+          { "pattern": "Waiting for server to start", "progress": 86, "label": "Loading The Island…" },
+          { "pattern": "Server started", "progress": 100, "label": "Online and ready to join" }
+        ]
+      }
+    }
+  ]
+}
+

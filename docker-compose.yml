@@ -1,0 +1,42 @@
+services:
+  controller-switch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rydberg-controller-switch
+    restart: unless-stopped
+    profiles:
+      - switch
+    env_file:
+      - .env
+    environment:
+      PORT: "8080"
+      GAMES_CONFIG: /app/games/games.json
+      STATIC_DIR: /app/public
+      PUBLIC_ORIGIN: https://${SWITCH_HOST:-switch.rydberg.app}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./games:/app/games:ro
+    networks:
+      - rydberg-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.switch.rule=Host(`${SWITCH_HOST:-switch.rydberg.app}`)"
+      - "traefik.http.routers.switch.entrypoints=web"
+      - "traefik.http.services.switch.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+networks:
+  rydberg-net:
+    external: true
+
